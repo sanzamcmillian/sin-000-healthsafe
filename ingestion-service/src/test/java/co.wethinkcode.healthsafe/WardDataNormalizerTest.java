@@ -1,41 +1,5 @@
 package co.wethinkcode.healthsafe;
 
-/*
- * ASSUMED CONTRACT — adjust to match your actual class/method names.
- * The test bodies and assertions are the spec; rename freely.
- *
- * A class `WardDataNormalizer` with small, pure, static methods, one per
- * concern (per the stage-1 plan: placeholder-check first, then type-specific
- * normalization):
- *
- *   static String  normalizePlaceholder(String raw)
- *       -> returns null if raw is a known placeholder/missing token
- *          (blank, "N/A", "n/a", "TBD", "unknown", "-", "NaN"),
- *          otherwise returns raw unchanged (still un-trimmed at this stage).
- *
- *   static String  normalizeText(String raw)
- *       -> trims, collapses internal double (or more) spaces to one,
- *          and applies ONE consistent casing rule. Tests below assume
- *          title case for names ("east wing " -> "East Wing") and
- *          upper case for the ward ID ("w-05" -> "W-05"). If you chose
- *          a different casing convention, only the expected-value
- *          literals need to change, not the test structure.
- *
- *   static Integer normalizeNumber(String raw)
- *       -> returns null for unparseable/invalid values (spelled-out
- *          numbers, negatives, blank), otherwise the parsed int.
- *          Adjust to Double if your bed counts should be non-integer.
- *
- *   static Boolean normalizeBoolean(String raw)
- *       -> maps the Y/N/yes/no/1/0/true/FALSE family to Boolean.TRUE /
- *          Boolean.FALSE, returns null if unrecognized.
- *
- *   static java.time.LocalDate normalizeDate(String raw)
- *       -> tries known formats (YYYY-MM-DD, MM/DD/YYYY, DD-MM-YYYY,
- *          1- and 2-digit day/month) in order, returns null (never
- *          throws) if none match or the date is invalid (e.g. day 32).
- */
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;

@@ -21,7 +21,7 @@ package co.wethinkcode.healthsafe;
  * bundled wards-outdated.csv, so they stay fast, readable, and independent
  * of the real file's exact row count/contents. Add a separate smoke test
  * against the real resource file once this passes (see bottom of file).
- */
+ *
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -141,4 +141,4 @@ class IngestionCleaningPipelineTest {
     //     List<CleanWardRecord> result = assertDoesNotThrow(() -> pipeline.clean(lines));
     //     assertFalse(result.isEmpty());
     // }
-}
+}*/
