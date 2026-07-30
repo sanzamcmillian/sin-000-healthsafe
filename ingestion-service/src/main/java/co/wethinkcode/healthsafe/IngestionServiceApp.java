@@ -15,8 +15,6 @@ public class IngestionServiceApp {
         IngestionCleaningPipeline pipeline = new IngestionCleaningPipeline();
         List<CleanWardRecord> cleanedRecords;
 
-
-
         try (InputStream is = IngestionServiceApp.class.getClassLoader()
                 .getResourceAsStream("wards-outdated.csv")) {
 
