@@ -1,31 +1,10 @@
 package co.wethinkcode.healthsafe;
 
-/*
- * ASSUMED CONTRACT — adjust to match your actual class/method/field names.
- *
- * A class `IngestionCleaningPipeline` (or wherever your "parse raw rows ->
- * cleaned records" logic lives) with:
- *
- *   List<CleanWardRecord> clean(List<String> csvDataLines)
- *       -> takes raw CSV data lines (no header), returns cleaned records.
- *          Must never throw on a malformed line — skip/flag it and keep going.
- *
- * A `CleanWardRecord` with (at minimum) these accessors:
- *   String  getWardId()
- *   String  getWing()
- *   String  getDepartment()
- *   Integer getBedsAvailable()   // null when unparseable
- *   String  getNotes()           // non-null explanation when something was flagged
- *
- * These tests deliberately use small inline CSV snippets rather than the
- * bundled wards-outdated.csv, so they stay fast, readable, and independent
- * of the real file's exact row count/contents. Add a separate smoke test
- * against the real resource file once this passes (see bottom of file).
- *
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,11 +22,11 @@ class IngestionCleaningPipelineTest {
 
         assertEquals(1, result.size());
         CleanWardRecord record = result.get(0);
-        assertEquals("W-05", record.getWardId());
-        assertEquals("East Wing", record.getWing());
-        assertEquals("Paediatrics", record.getDepartment());
-        assertNull(record.getBedsAvailable(), "non-numeric bed count should be null, not 0 or crash");
-        assertNotNull(record.getNotes(), "unparseable field should be flagged in notes");
+        assertEquals("W-05", record.wardId());
+        assertEquals("East Wing", record.wing());
+        assertEquals("Paediatrics", record.department());
+        assertNull(record.bedsAvailable(), "non-numeric bed count should be null, not 0 or crash");
+        assertNotNull(record.notes(), "unparseable field should be flagged in notes");
     }
 
     @Test
@@ -63,8 +42,8 @@ class IngestionCleaningPipelineTest {
 
         // exactly the two well-formed rows should have made it through
         assertEquals(2, result.size());
-        assertTrue(result.stream().anyMatch(r -> "W-01".equals(r.getWardId())));
-        assertTrue(result.stream().anyMatch(r -> "W-02".equals(r.getWardId())));
+        assertTrue(result.stream().anyMatch(r -> "W-01".equals(r.wardId())));
+        assertTrue(result.stream().anyMatch(r -> "W-02".equals(r.wardId())));
     }
 
     @Test
@@ -92,7 +71,7 @@ class IngestionCleaningPipelineTest {
 
         assertEquals(1, result.size(),
             "both rows describe the same real-world ward and should merge, not duplicate");
-        assertEquals("W-05", result.get(0).getWardId());
+        assertEquals("W-05", result.get(0).wardId());
     }
 
     @Test
@@ -123,22 +102,24 @@ class IngestionCleaningPipelineTest {
 
         CleanWardRecord record = pipeline.clean(rawLines).get(0);
 
-        assertNull(record.getBedsAvailable());
-        assertNotNull(record.getNotes());
+        assertNull(record.bedsAvailable());
+        assertNotNull(record.notes());
     }
 
+    /**
+     * Smoke test against the real bundled file. Loose on purpose: it just
+     *      guards against "the whole pipeline throws on the actual input," which
+     *      is the single most important behaviour per the stage-1 brief.
+     *      Wire up the real file path once your resource loading is in place.
+     */
     // ------------------------------------------------------------------
-    // Smoke test against the real bundled file. Loose on purpose: it just
-    // guards against "the whole pipeline throws on the actual input," which
-    // is the single most important behaviour per the stage-1 brief.
-    // Wire up the real file path once your resource loading is in place.
-    // ------------------------------------------------------------------
-    // @Test
-    // @DisplayName("the real wards-outdated.csv parses fully without throwing")
-    // void realFileParsesWithoutThrowing() throws Exception {
-    //     List<String> lines = Files.readAllLines(
-    //         Path.of("src/main/resources/wards-outdated.csv"));
-    //     List<CleanWardRecord> result = assertDoesNotThrow(() -> pipeline.clean(lines));
-    //     assertFalse(result.isEmpty());
-    // }
-}*/
+     @Test
+     @DisplayName("the real wards-outdated.csv parses fully without throwing")
+     void realFileParsesWithoutThrowing() throws Exception {
+         List<String> lines = Files.readAllLines(
+             Path.of("src/main/resources/wards-outdated.csv"));
+         List<CleanWardRecord> result = assertDoesNotThrow(() -> pipeline.clean(lines));
+         //System.out.println(result.toString());
+         assertFalse(result.isEmpty());
+     }
+}
