@@ -1,30 +1,5 @@
 package co.wethinkcode.healthsafe;
 
-/*
- * ASSUMED CONTRACT — adjust names/thresholds to match your actual rule.
- *
- * A class `StaffingScheduler` with a pure static (or instance, doesn't
- * matter) method:
- *
- *   StaffingPlan computeSchedule(int alertLevel)
- *
- * A `StaffingPlan` with:
- *   int     getDoctorCount()
- *   boolean isSupervisorRequired()
- *
- * Illustrative rule assumed below (swap your own thresholds/counts,
- * the test structure stays the same either way):
- *   level 0-2  -> 1 doctor,  no supervisor
- *   level 3-5  -> 2 doctors, no supervisor
- *   level 6-8  -> 3 doctors, supervisor required
- *
- * computeSchedule is assumed to only ever be called with an already-
- * validated 0-8 level (alert-level-service enforces that range), so
- * out-of-range input isn't this class's job — that's already covered
- * by AlertLevelStoreTest. If you'd rather have this method defensively
- * validate too, add equivalent out-of-range cases here.
- */
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

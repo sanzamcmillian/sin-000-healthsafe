@@ -1,5 +1,6 @@
 package co.wethinkcode.healthsafe;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -99,6 +100,108 @@ public class StaffingServiceApp {
             ctx.status(404).result("Ward not found");
         }
     }
+
+    /**
+     * Core application runner that coordinates downstream microservice workflows.
+     */
+    public static Javalin create(String wardServiceUrl, String alertLevelServiceUrl, Duration timeout) {
+        ObjectMapper mapper = new ObjectMapper();
+
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(timeout)
+                .build();
+
+        Javalin app = Javalin.create(config -> {
+            config.jsonMapper(new JavalinJackson(mapper));
+        });
+
+        // Main integration endpoint route under test
+        app.get("/schedule/{wardId}", ctx -> {
+            String wardId = ctx.pathParam("wardId");
+
+            // 1. Query the downstream Ward Service
+            String wardRawUrl = wardServiceUrl + "/wards/" + wardId;
+            HttpResponse<String> wardResponse;
+            try {
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(wardRawUrl))
+                        .timeout(timeout)
+                        .GET()
+                        .build();
+                wardResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+            } catch (Exception e) {
+                ctx.status(503).result("Ward service down or timed out");
+                return;
+            }
+
+            // Propagate 404 errors transparently
+            if (wardResponse.statusCode() == 404) {
+                ctx.status(404).result("Ward not found");
+                return;
+            }
+
+            // Fallback status for unexpected downstream failures
+            if (wardResponse.statusCode() != 200) {
+                ctx.status(502).result("Bad gateway from ward service");
+                return;
+            }
+
+            // 2. Query the downstream Alert Level Service
+            String alertRawUrl = alertLevelServiceUrl + "/alert-level";
+            HttpResponse<String> alertResponse;
+            try {
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(alertRawUrl))
+                        .timeout(timeout)
+                        .GET()
+                        .build();
+                alertResponse = client.send(request, HttpResponse.BodyHandlers.ofString());
+            } catch (Exception e) {
+                ctx.status(503).result("Alert service down or timed out");
+                return;
+            }
+
+            if (alertResponse.statusCode() != 200) {
+                ctx.status(502).result("Bad gateway from alert service");
+                return;
+            }
+
+            // 3. Process data structures and map business rules
+            try {
+                JsonNode wardNode = mapper.readTree(wardResponse.body());
+                JsonNode alertNode = mapper.readTree(alertResponse.body());
+
+                // Guard against syntactically correct JSON that lacks our specific properties
+                if (!wardNode.has("id") || !alertNode.has("level")) {
+                    ctx.status(502).result("Incomplete fields from downstream payload");
+                    return;
+                }
+
+                String confirmedWardId = wardNode.get("id").asText();
+                int currentLevel = alertNode.get("level").asInt();
+
+                // Generate business rules schedule plan
+                StaffingPlan plan = StaffingScheduler.computeSchedule(currentLevel);
+
+                // Build output payload view
+                WardScheduleResponse combinedPlan = new WardScheduleResponse(
+                        confirmedWardId,
+                        currentLevel,
+                        plan.getDoctorCount(),
+                        plan.isSupervisorRequired()
+                );
+
+                ctx.json(combinedPlan);
+
+            } catch (Exception parseException) {
+                // Catch malformed json text structures safely to avoid returning 500 errors
+                ctx.status(502).result("Malformed response schema error");
+            }
+        });
+
+        return app;
+    }
 }
+
 
 // MQ TODO: publishes to ActiveMQ topic MqConfig.TOPIC at MqConfig.BROKER_URL (see co.wethinkcode.healthsafe.mq.MqConfig)
