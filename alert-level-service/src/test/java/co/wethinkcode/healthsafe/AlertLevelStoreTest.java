@@ -1,23 +1,5 @@
 package co.wethinkcode.healthsafe;
 
-/*
- * ASSUMED CONTRACT — adjust names to match your actual implementation.
- *
- * A class `AlertLevelStore` (or wherever the in-memory state + validation
- * logic lives, separate from the Javalin route handler) with:
- *
- *   AlertLevelStore()                 // starts at a default, assumed 0 below
- *   int getLevel()
- *   boolean setLevel(int newLevel)    // returns true if accepted & applied,
- *                                     // false if rejected (out of range) —
- *                                     // adjust if you instead throw an
- *                                     // exception on invalid input; either
- *                                     // is defensible, just be consistent
- *                                     // with what the route handler expects.
- *
- * Valid range assumed inclusive: 0–8.
- */
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
