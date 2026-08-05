@@ -1,29 +1,5 @@
 package co.wethinkcode.healthsafe;
 
-/*
- * ASSUMED CONTRACT — adjust to match your actual app setup.
- *
- *   Javalin app = StaffingServiceApp.create(
- *       wardServiceBaseUrl, alertLevelServiceBaseUrl, requestTimeout);
- *
- * (the Duration timeout param is a recommended addition if you don't
- * have one yet — without it, the "downstream unreachable" tests below
- * either hang or take as long as your hardcoded timeout for real.
- * Keeping it short, e.g. 300ms, keeps this whole suite fast.)
- *
- * Route under test: GET /schedule/{wardId}
- *   200 {"wardId": ..., "alertLevel": ..., "doctorCount": ...,
- *        "supervisorRequired": ...}          on success
- *   404                                       when ward-service 404s
- *   502 or 503                                when either downstream is
- *                                              unreachable, times out, or
- *                                              returns malformed JSON
- *
- * Fake ward-service is expected to expose GET /wards/{id} (matching
- * ward-service's real contract); fake alert-level-service exposes
- * GET /alert-level. Adjust paths/response shapes if yours differ.
- */
-
 import io.javalin.Javalin;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
