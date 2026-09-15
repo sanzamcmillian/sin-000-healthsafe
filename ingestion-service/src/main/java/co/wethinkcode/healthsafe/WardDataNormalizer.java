@@ -79,7 +79,7 @@ public class WardDataNormalizer {
         }
         try {
             int value = Integer.parseInt(raw.trim());
-            return value < 0 ? null : value;
+            return (value < 0 || value > 500) ? null : value;
         } catch (NumberFormatException e) {
             return null;
         }
