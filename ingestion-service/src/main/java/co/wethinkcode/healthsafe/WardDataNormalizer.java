@@ -3,9 +3,7 @@ package co.wethinkcode.healthsafe;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class WardDataNormalizer {
 
@@ -18,6 +16,12 @@ public class WardDataNormalizer {
             DateTimeFormatter.ofPattern("M/d/yyyy"),
             DateTimeFormatter.ofPattern("d-M-yyyy")
     };
+
+    private static final Map<String, String> DEPT_ALIGNMENT = new HashMap<>();
+    static {
+        DEPT_ALIGNMENT.put("pediatrics", "Paediatrics");
+        DEPT_ALIGNMENT.put("paediatrics", "Paediatrics");
+    }
 
     /**
      * Returns null if raw is a known placeholder/missing token.
@@ -48,8 +52,13 @@ public class WardDataNormalizer {
             return "";
         }
 
+        String lowerCaseMatch = cleaned.toLowerCase();
+        if (DEPT_ALIGNMENT.containsKey(lowerCaseMatch)) {
+            return DEPT_ALIGNMENT.get(lowerCaseMatch);
+        }
+
         // Special casing for ward IDs (e.g., "w-05" -> "W-05")
-        if (cleaned.toLowerCase().matches("^w-\\d+$")) {
+        if (lowerCaseMatch.toLowerCase().matches("^w-\\d+$")) {
             return cleaned.toUpperCase();
         }
 
