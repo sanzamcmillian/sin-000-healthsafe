@@ -1,7 +1,6 @@
 package co.wethinkcode.healthsafe;
 
 import io.javalin.Javalin;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -10,45 +9,61 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class IngestionServiceApp {
-    public static void main(String[] args) {
-        // 1. Initialize the pipeline and load the file
-        IngestionCleaningPipeline pipeline = new IngestionCleaningPipeline();
-        List<CleanWardRecord> cleanedRecords;
+    private final Javalin app;
+    private final String resourceFileName;
 
+    // Default constructor for actual production execution
+    public IngestionServiceApp() {
+        this("wards-outdated.csv");
+    }
+
+    // Overloaded constructor allowing tests to supply distinct resource mock profiles
+    public IngestionServiceApp(String resourceFileName) {
+        this.resourceFileName = resourceFileName;
+        this.app = Javalin.create();
+        configureRoutes();
+    }
+
+    public void start(int port) {
+        this.app.start(port);
+    }
+
+    public void stop() {
+        this.app.stop();
+    }
+
+    private void configureRoutes() {
+        List<CleanWardRecord> cleanedRecords = loadAndCleanRecords();
+
+        app.get("/health", ctx -> ctx.result("OK"));
+        app.get("/wards", ctx -> ctx.json(cleanedRecords));
+    }
+
+    private List<CleanWardRecord> loadAndCleanRecords() {
+        IngestionCleaningPipeline pipeline = new IngestionCleaningPipeline();
         try (InputStream is = IngestionServiceApp.class.getClassLoader()
-                .getResourceAsStream("wards-outdated.csv")) {
+                .getResourceAsStream(resourceFileName)) {
 
             if (is == null) {
-                throw new java.io.FileNotFoundException("Resource file 'wards-outdated.csv' not found on the classpath!");
+                throw new java.io.FileNotFoundException("Resource file '" + resourceFileName + "' not found!");
             }
 
-            // Convert the stream of binary data cleanly into string data lines
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-
                 List<String> rawLines = reader.lines().collect(Collectors.toList());
-                // Ensure the file isn't completely empty first, then slice out the first element
                 if (!rawLines.isEmpty()) {
                     rawLines = rawLines.subList(1, rawLines.size());
                 }
-                cleanedRecords = pipeline.clean(rawLines);
-
-                System.out.println("Successfully clean-parsed " + cleanedRecords.size() + " records from resource file.");
+                return pipeline.clean(rawLines);
             }
         } catch (Exception e) {
-            System.err.println("Fatal error loading wards-outdated.csv file: " + e.getMessage());
-            // Fallback to empty list so the service can still start up rather than crashing hard
-            cleanedRecords = List.of();
+            System.err.println("Fatal error loading resource file: " + e.getMessage());
+            return List.of();
         }
+    }
 
-        // 2. Start the Javalin web framework server instance
-        Javalin app = Javalin.create().start(7030);
-
-        // Standard service health check endpoint
-        app.get("/health", ctx -> ctx.result("OK"));
-
-        // 3. Expose the cleaned datasets for consumer services
-        // ctx.json() automatically transforms the list of records into a valid JSON array format
-        List<CleanWardRecord> finalRecords = cleanedRecords;
-        app.get("/wards", ctx -> ctx.json(finalRecords));
+    public static void main(String[] args) {
+        IngestionServiceApp service = new IngestionServiceApp();
+        service.start(7030);
     }
 }
+
