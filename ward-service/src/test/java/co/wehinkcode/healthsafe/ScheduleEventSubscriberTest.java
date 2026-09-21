@@ -31,6 +31,9 @@ package co.wehinkcode.healthsafe;
  * (flaky) or wastes time on every run.
  */
 
+import co.wethinkcode.healthsafe.ScheduleEventSubscriber;
+import co.wethinkcode.healthsafe.StaffingInfo;
+import co.wethinkcode.healthsafe.StaffingInfoStore;
 import jakarta.jms.*;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -55,7 +58,6 @@ class ScheduleEventSubscriberTest {
     private Connection testPublisherConnection;
     private Session testPublisherSession;
     private MessageProducer testPublisher;
-    private Topic topic;
 
     private StaffingInfoStore store;
     private ScheduleEventSubscriber subscriber;
@@ -66,7 +68,7 @@ class ScheduleEventSubscriberTest {
         testPublisherConnection = factory.createConnection();
         testPublisherConnection.start();
         testPublisherSession = testPublisherConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        topic = testPublisherSession.createTopic(TOPIC_NAME);
+        Topic topic = testPublisherSession.createTopic(TOPIC_NAME);
         testPublisher = testPublisherSession.createProducer(topic);
 
         store = new StaffingInfoStore();
