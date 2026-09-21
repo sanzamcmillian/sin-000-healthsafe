@@ -25,7 +25,7 @@ public class ScheduleEventSubscriber implements MessageListener{
         this.objectMapper = new ObjectMapper();
     }
 
-    void start() throws JMSException {
+    public void start() throws JMSException {
         ConnectionFactory factory = new ActiveMQConnectionFactory(brokerUrl);
         connection = factory.createConnection();
         connection.start();
@@ -64,7 +64,8 @@ public class ScheduleEventSubscriber implements MessageListener{
         StaffingInfo info = new StaffingInfo(alertLevel, doctorCount, supervisorRequired);
         store.updateStaffingInfo(wardId, info);
     }
-    void stop() throws JMSException {
+
+    public void stop() throws JMSException {
         if (consumer != null) consumer.close();
         if (session != null) session.close();
         if (connection != null) connection.close();
