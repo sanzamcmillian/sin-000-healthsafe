@@ -1,30 +1,11 @@
 package co.wethinkcode.healthsafe;
 
-public class StaffingInfo {
-    private final int alertLevel;
-    private final int doctorCount;
-    private final boolean supervisorRequired;
+import org.jetbrains.annotations.NotNull;
 
-    public StaffingInfo(int alertLevel, int doctorCount, boolean supervisorRequired) {
-        this.alertLevel = alertLevel;
-        this.doctorCount = doctorCount;
-        this.supervisorRequired = supervisorRequired;
-    }
-
-    public int getAlertLevel() {
-        return alertLevel;
-    }
-
-    public int getDoctorCount() {
-        return doctorCount;
-    }
-
-    public boolean isSupervisorRequired() {
-        return supervisorRequired;
-    }
+public record StaffingInfo(int alertLevel, int doctorCount, boolean supervisorRequired) {
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return "StaffingInfo{" +
                 "alertLevel=" + alertLevel +
                 ", doctorCount=" + doctorCount +

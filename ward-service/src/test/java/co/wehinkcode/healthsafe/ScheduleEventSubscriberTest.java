@@ -92,9 +92,9 @@ class ScheduleEventSubscriberTest {
         Optional<StaffingInfo> result = awaitUntilPresent(() -> store.getStaffingInfo("W-05"));
 
         assertTrue(result.isPresent(), "expected staffing info for W-05 to appear after the event was consumed");
-        assertEquals(3, result.get().getDoctorCount());
-        assertTrue(result.get().isSupervisorRequired());
-        assertEquals(6, result.get().getAlertLevel());
+        assertEquals(3, result.get().doctorCount());
+        assertTrue(result.get().supervisorRequired());
+        assertEquals(6, result.get().alertLevel());
     }
 
     @Test
@@ -106,12 +106,12 @@ class ScheduleEventSubscriberTest {
         publishRawEvent("W-05", 7, 3, true);
         Optional<StaffingInfo> result = awaitUntil(
             () -> store.getStaffingInfo("W-05"),
-            info -> info.isPresent() && info.get().getDoctorCount() == 3
+            info -> info.isPresent() && info.get().doctorCount() == 3
         );
 
         assertTrue(result.isPresent());
-        assertEquals(3, result.get().getDoctorCount());
-        assertTrue(result.get().isSupervisorRequired());
+        assertEquals(3, result.get().doctorCount());
+        assertTrue(result.get().supervisorRequired());
     }
 
     @Test
@@ -123,8 +123,8 @@ class ScheduleEventSubscriberTest {
         Optional<StaffingInfo> ward1 = awaitUntilPresent(() -> store.getStaffingInfo("W-01"));
         Optional<StaffingInfo> ward2 = awaitUntilPresent(() -> store.getStaffingInfo("W-02"));
 
-        assertEquals(1, ward1.get().getDoctorCount());
-        assertEquals(3, ward2.get().getDoctorCount());
+        assertEquals(1, ward1.get().doctorCount());
+        assertEquals(3, ward2.get().doctorCount());
     }
 
     @Test
