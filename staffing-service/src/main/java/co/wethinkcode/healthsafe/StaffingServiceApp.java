@@ -79,7 +79,7 @@ public class StaffingServiceApp {
 
         try {
             String payload = String.format(
-                    "{\"wardId\":\"%s\",\"alertLevel\":%d,\"supervisorRequired\":%b,\"timestamp\":\"%s\"}",
+                    "{\"wardId\":\"%s\",\"alertLevel\":%d,\"doctorCount\":%d,\"supervisorRequired\":%b,\"timestamp\":\"%s\"}",
                     wardId, alertLevel, doctorCount, supervisorRequired, Instant.now()
             );
 
@@ -236,16 +236,23 @@ public class StaffingServiceApp {
                 JsonNode alertNode = mapper.readTree(alertResponse.body());
 
                 // Guard against syntactically correct JSON that lacks our specific properties
-                if (!wardNode.has("id") || !alertNode.has("level")) {
+                if (!wardNode.has("wardId") || !alertNode.has("level")) {
                     ctx.status(502).result("Incomplete fields from downstream payload");
                     return;
                 }
 
-                String confirmedWardId = wardNode.get("id").asText();
+                String confirmedWardId = wardNode.get("wardId").asText();
                 int currentLevel = alertNode.get("level").asInt();
 
                 // Generate business rules schedule plan
                 StaffingPlan plan = StaffingScheduler.computeSchedule(currentLevel);
+
+                publishScheduleEvent(
+                        confirmedWardId,
+                        currentLevel,
+                        plan.getDoctorCount(),
+                        plan.isSupervisorRequired()
+                );
 
                 // Build output payload view
                 WardScheduleResponse combinedPlan = new WardScheduleResponse(

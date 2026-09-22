@@ -10,8 +10,8 @@ public class EquipmentAlertServiceApp {
         AlertStore alertStore = new AlertStore();
 
         EquipmentAlertSubscriber subscriber = new EquipmentAlertSubscriber(
-                MqConfiq.BROKER_URL,
-                MqConfiq.QUEUE,
+                MqConfig.BROKER_URL,
+                MqConfig.QUEUE,
                 alertStore
         );
 

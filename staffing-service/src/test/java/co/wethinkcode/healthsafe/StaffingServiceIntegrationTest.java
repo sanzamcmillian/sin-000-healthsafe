@@ -34,7 +34,7 @@ class StaffingServiceIntegrationTest {
     void happyPathReturnsSchedule() throws Exception {
         fakeWardService = fakeServer(app ->
             app.get("/wards/{id}", ctx -> ctx.json("""
-                {"id":"W-05","wing":"East Wing","department":"Paediatrics","bedsAvailable":5}
+                {"wardId":"W-05","wing":"East Wing","department":"Paediatrics","bedsAvailable":5}
                 """)));
 
         fakeAlertLevelService = fakeServer(app ->
