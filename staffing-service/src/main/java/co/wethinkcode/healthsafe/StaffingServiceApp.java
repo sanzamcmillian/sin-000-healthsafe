@@ -1,16 +1,20 @@
 package co.wethinkcode.healthsafe;
 
+import co.wethinkcode.healthsafe.mq.MqConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.json.JavalinJackson;
+import jakarta.jms.*;
+import org.apache.activemq.ActiveMQConnectionFactory;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,7 +22,18 @@ public class StaffingServiceApp {
 
     private static final String CLEANING_SERVICE_URL = "http://localhost:7030/wards";
 
+    private static Connection mqConnection;
+    private static Session mqSession;
+    private static MessageProducer scheduleEventProducer;
+
     public static void main(String[] args) {
+        try {
+            initMqPubisher();
+            System.out.println("staffingServiceApp ActiveMQ publisher initialized.");
+        } catch (Exception e) {
+            System.err.println("Failed to initialize ActiveMQ publisher: " + e.getMessage());
+        }
+
         WardRepository repository = new WardRepository(List.of());
 
         System.out.println("Fetching canonical data from ingestion service...");
@@ -31,10 +46,59 @@ public class StaffingServiceApp {
             System.err.println("Warning: Starting up with an empty repository due to fetch failure.");
         }
 
-        Javalin app = StaffingServiceApp.create(repository).start(7033);
+        Javalin app = StaffingServiceApp.create(
+                "http://localhost:7031",
+                "http://localhost:7032",
+                Duration.ofSeconds(5)
+        ).start(7033);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            closeMqPublisher();
+            app.stop();
+        }));
 
         // TODO (Provides on-call schedules for doctors based on ward and status.)
         // Add domain endpoints for staffing-service here.
+    }
+
+    private static void initMqPubisher() throws JMSException {
+        ConnectionFactory factory  = new ActiveMQConnectionFactory(MqConfig.BROKER_URL);
+        mqConnection = factory.createConnection();
+        mqConnection.start();
+
+        mqSession = mqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic topic = mqSession.createTopic(MqConfig.TOPIC);
+        scheduleEventProducer = mqSession.createProducer(topic);
+    }
+
+    private static void publishScheduleEvent(String wardId, int alertLevel, int doctorCount, boolean supervisorRequired) {
+        if (mqSession == null || scheduleEventProducer == null) {
+            System.err.println("MQ Publisher not ready, skipping broadcast.");
+            return;
+        }
+
+        try {
+            String payload = String.format(
+                    "{\"wardId\":\"%s\",\"alertLevel\":%d,\"supervisorRequired\":%b,\"timestamp\":\"%s\"}",
+                    wardId, alertLevel, doctorCount, supervisorRequired, Instant.now()
+            );
+
+            TextMessage message = mqSession.createTextMessage(payload);
+            scheduleEventProducer.send(message);
+            System.out.println("Published schedule update to topic for ward: " + wardId);
+        } catch (Exception e) {
+            System.err.println("Failed to publish schedule update: " + e.getMessage());
+        }
+    }
+
+    private static void closeMqPublisher() {
+        try {
+            if ( scheduleEventProducer != null ) scheduleEventProducer.close();
+            if ( mqSession != null ) mqSession.close();
+            if ( mqConnection != null ) mqConnection.close();
+        } catch (Exception e) {
+            System.err.println("Error closing MQ producer: " + e.getMessage());
+        }
     }
 
     /**
